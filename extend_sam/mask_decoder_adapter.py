@@ -66,10 +66,43 @@ class SemMaskDecoderAdapter(BaseMaskDecoderAdapter):
 
     def pair_params(self, target_model: nn.Module):
         src_dict = self.sam_mask_decoder.state_dict()
+        found_groups = {
+            # these group architectures are different from original SAM
+            # hence, requires appropriate initializations
+            'output_hypernetworks_mlps' : 0,
+            'iou_prediction_head' : 0,
+        }
+        # Either copy state or update found_groups counter
         for name, value in target_model.named_parameters():
             if name in src_dict.keys():
-                value.data.copy_(src_dict[name].data)
-
+                group = name.split('.')[0]
+                if group in found_groups.keys():
+                    found_groups[group] += 1
+                else:
+                    value.data.copy_(src_dict[name].data)
+        # Keep only found groups
+        del_keys = []
+        for group, counter in found_groups.items():
+            if counter==0:
+                del_keys.append(group)
+        for key in del_keys:
+            found_groups.pop(key)
+        # copy state differently for found groups
+        for name, value in target_model.named_parameters():
+            if name.startswith('output_hypernetworks_mlps.') and 'output_hypernetworks_mlps' in found_groups:
+                # idea - initialize all mpls with same weight/bias as mlp for mask_scale = 0
+                # example name: output_hypernetworks_mlps.0.layers.2.bias
+                group, mpl_num, layer_detail = name.split('.', 2)
+                src_name = group + '.' + '0' + '.' + layer_detail # corresponds to mask_scale 0
+                value.data.copy_(src_dict[src_name].data)
+            if name.startswith('iou_prediction_head.layers.2') and 'iou_prediction_head' in found_groups:
+                # idea - initialize by expanding original (4,...) tensor to (num_classes,...) shaped tensor
+                # Similar to mlp, but initialize only the last_layer weight(matrix)/bias(vector) [for mask_scale 0-3]
+                # with same weight(vector)/bias(scalar) values corresponding to iou_prediction output for mask_scale = 0
+                # expanded_src_data = src_dict[name].data.repeat_interleave(3, dim=0)
+                src_data = src_dict[name].data[0:1] # corresponds to mask_scale 0
+                expanded_src_data = src_data.repeat_interleave(self.class_num, dim=0)
+                value.data.copy_(expanded_src_data)
 
 # Lightly adapted from
 # https://github.com/facebookresearch/MaskFormer/blob/main/mask_former/modeling/transformer/transformer_predictor.py # noqa
