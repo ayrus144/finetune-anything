@@ -1,4 +1,5 @@
 import os
+from omegaconf import OmegaConf
 from PIL import Image
 from torch.utils.data import Dataset
 from torchvision.datasets import VOCSegmentation, VisionDataset
@@ -11,6 +12,7 @@ class BaseSemanticDataset(VisionDataset):
     the img and mask file need be arranged as this sturcture.
         ├── data
         │   ├── my_dataset
+        │   │   ├── metainfo.yaml
         │   │   ├── img
         │   │   │   ├── train
         │   │   │   │   ├── xxx{img_suffix}
@@ -25,15 +27,13 @@ class BaseSemanticDataset(VisionDataset):
         │   │   │   ├── val
     """
 
-    def __init__(self, metainfo, dataset_dir, transform, target_transform,
+    def __init__(self, dataset_dir, transform, target_transform,
                  image_set='train',
                  img_suffix='.jpg',
                  ann_suffix='.png',
                  data_prefix: dict = dict(img_path='img', ann_path='ann'),
                  return_dict=False):
         '''
-
-        :param metainfo: meta data in original dataset, e.g. class_names
         :param dataset_dir: the path of your dataset, e.g. data/my_dataset/ by the stucture tree above
         :param image_set: 'train' or 'val'
         :param img_suffix: your image suffix
@@ -44,6 +44,7 @@ class BaseSemanticDataset(VisionDataset):
         super(BaseSemanticDataset, self).__init__(root=dataset_dir, transform=transform,
                                                   target_transform=target_transform)
 
+        metainfo = OmegaConf.load(os.path.join(dataset_dir, 'metainfo.yaml'))
         self.class_names = metainfo['class_names']
         self.img_path = os.path.join(dataset_dir, data_prefix['img_path'], image_set)
         self.ann_path = os.path.join(dataset_dir, data_prefix['ann_path'], image_set)

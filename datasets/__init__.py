@@ -28,6 +28,8 @@ def get_dataset(cfg):
 
 class Iterator:
     def __init__(self, loader):
+        if len(loader) == 0:
+            raise ValueError("Loader is empty.")
         self.loader = loader
         self.init()
 
