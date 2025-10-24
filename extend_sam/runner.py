@@ -61,7 +61,8 @@ class SemRunner(BaseRunner):
 
             total_loss = torch.zeros(1).cuda()
             loss_dict = {}
-            self._compute_loss(total_loss, loss_dict, masks_pred, labels, cfg)
+            # print(self.scheduler.get_last_lr())
+            self._compute_loss(total_loss, loss_dict, masks_pred, labels, iou_pred, cfg)
             self.optimizer.zero_grad()
             total_loss.backward()
             self.optimizer.step()
@@ -115,7 +116,7 @@ class SemRunner(BaseRunner):
         self.model.train()
         return eval_metric.get(detail=True, clear=True)
 
-    def _compute_loss(self, total_loss, loss_dict, mask_pred, labels, cfg):
+    def _compute_loss(self, total_loss, loss_dict, mask_pred, labels, iou_pred, cfg):
         """
         Due to the inputs of losses are different, so if you want to add new losses,
         you may need to modify the process in this function
@@ -124,9 +125,10 @@ class SemRunner(BaseRunner):
         for index, item in enumerate(self.losses.items()):
             # item -> (key: loss_name, val: loss)
             real_labels = labels
-            if loss_cfg[item[0]].label_one_hot:
+            loss_name, loss_func = item
+            if loss_cfg[loss_name].label_one_hot:
                 class_num = cfg.model.params.class_num
                 real_labels = one_hot_embedding_3d(real_labels, class_num=class_num)
-            tmp_loss = item[1](mask_pred, real_labels)
-            loss_dict[item[0]] = tmp_loss.item()
-            total_loss += loss_cfg[item[0]].weight * tmp_loss
+            tmp_loss = loss_func(mask_pred, real_labels, iou_pred)
+            loss_dict[loss_name] = tmp_loss.item()
+            total_loss += loss_cfg[loss_name].weight * tmp_loss
