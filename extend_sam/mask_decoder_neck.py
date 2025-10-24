@@ -49,14 +49,6 @@ class MaskDecoderNeck(nn.Module):
         self.num_mask_tokens = num_multimask_outputs + 1
         self.mask_tokens = nn.Embedding(self.num_mask_tokens, transformer_dim)
 
-        self.output_upscaling = nn.Sequential(
-            nn.ConvTranspose2d(transformer_dim, transformer_dim // 4, kernel_size=2, stride=2),
-            LayerNorm2d(transformer_dim // 4),
-            activation(),
-            nn.ConvTranspose2d(transformer_dim // 4, transformer_dim // 8, kernel_size=2, stride=2),
-            activation(),
-        )
-
     def forward(
             self,
             image_embeddings: torch.Tensor,
