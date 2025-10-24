@@ -40,6 +40,7 @@ class BaseMaskDecoderAdapter(MaskDecoder):
 
 class SemMaskDecoderAdapter(BaseMaskDecoderAdapter):
     def __init__(self, ori_sam: Sam, fix=False, class_num=20):
+        self.class_num = class_num
         super(SemMaskDecoderAdapter, self).__init__(ori_sam, fix)
         self.decoder_neck = MaskDecoderNeck(transformer_dim=self.sam_mask_decoder.transformer_dim,
                                             transformer=self.sam_mask_decoder.transformer,
