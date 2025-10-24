@@ -38,8 +38,8 @@ if __name__ == '__main__':
     opt_params = get_opt_pamams(model, lr_list=train_cfg.opt_params.lr_list, group_keys=train_cfg.opt_params.group_keys,
                                 wd_list=train_cfg.opt_params.wd_list)
     optimizer = get_optimizer(opt_name=train_cfg.opt_name, params=opt_params, lr=train_cfg.opt_params.lr_default,
-                              momentum=train_cfg.opt_params.momentum, weight_decay=train_cfg.opt_params.wd_default)
-    scheduler = get_scheduler(optimizer=optimizer, lr_scheduler=train_cfg.scheduler_name)
+                              weight_decay=train_cfg.opt_params.wd_default)
+    scheduler = get_scheduler(optimizer=optimizer, lr_scheduler=train_cfg.scheduler_name, max_epoch=train_cfg.max_iter)
     runner = get_runner(train_cfg.runner_name)(model, optimizer, losses, train_loader, val_loader, scheduler)
     # train_step
     runner.train(train_cfg)
