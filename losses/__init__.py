@@ -1,8 +1,8 @@
 import torch.nn as nn
-from .losses import CustomLoss, MultiClassDiceLoss, MultiClassFocalLoss
+from .losses import CustomLoss, MultiClassDiceLoss, MultiClassFocalLoss, MultiClassIoULoss
 
 AVAI_LOSS = {'ce': nn.CrossEntropyLoss, 'multi_label_soft_margin': nn.MultiLabelSoftMarginLoss,
-             'test_custom': CustomLoss, 'mse': nn.MSELoss,
+             'test_custom': CustomLoss, 'mse': nn.MSELoss, 'iou_loss': MultiClassIoULoss,
              'dice_loss': MultiClassDiceLoss, 'focal_loss': MultiClassFocalLoss}
 
 

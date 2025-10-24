@@ -141,3 +141,60 @@ class MultiClassFocalLoss(nn.Module):
             return loss.sum()
         else:
             return loss  # shape (B, H, W)
+
+
+class MultiClassIoULoss(nn.Module):
+    def __init__(self, num_classes, eps=1e-6):
+        """
+        Multi-Class IoU loss for training IoU prediction head
+        (Maybe not useful for the current class-ware semantic segmentation model architecture)
+
+        Args:
+            num_classes: Number of classes - taken directly from config file
+            eps (float): Avoids division by zero.
+        """
+        super(MultiClassIoULoss, self).__init__()
+        self.num_classes = num_classes
+        self.eps = eps
+
+    def forward(self, inputs, targets, iou_inputs):
+        """
+        Args:
+            inputs: [B, C, W, H] predicted masks (probabilities)
+            targets: [B, W, H] ground truth class labels
+            iou_inputs: [B, C] predicted IoU scalars from IoU head
+
+        Returns:
+            loss: scalar tensor
+        """
+        with torch.no_grad():
+            # true_ious are non-trainable label we create
+            # so gradients should not pass through true_ious
+            true_ious = self.batch_multiclass_iou(inputs, targets)
+        loss = F.mse_loss(iou_inputs, true_ious, reduction='mean')  # or reduction='sum'
+        return loss
+
+    def batch_multiclass_iou(self, inputs, targets):
+        """
+        Args:
+            inputs: [B, C, H, W] logits
+            targets: [B, H, W] int labels 0..C-1
+
+        Returns:
+            IoU: [B, C] soft-IoU (ideal for multi-class)
+        """
+
+        # Convert target to one-hot [B, C, H, W]
+        targets_one_hot = F.one_hot(targets, num_classes=self.num_classes)
+        targets_one_hot = targets_one_hot.permute(0, 3, 1, 2).float()
+
+        # Apply softmax if preds are logits
+        preds = F.softmax(inputs, dim=1)
+
+        # Compute intersection and union per class and per batch item
+        intersection = torch.sum(preds * targets_one_hot, dim=(2,3))  # [B, C]
+        union = torch.sum(preds + targets_one_hot, dim=(2,3)) - intersection  # [B, C]
+
+        iou = (intersection + self.eps) / (union + self.eps)  # [B, C]
+
+        return iou
