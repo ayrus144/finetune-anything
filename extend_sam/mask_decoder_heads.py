@@ -165,7 +165,7 @@ class SemSegHead(nn.Module):
             iou_token_out: torch.Tensor,
             mask_tokens_out: torch.Tensor,
             src_shape,
-            mask_scale=1,
+            mask_scale=0,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
         """
         Predict masks given image and prompt embeddings.
@@ -174,9 +174,17 @@ class SemSegHead(nn.Module):
           src (torch.Tensor): The tensor contains image embedding and sparse prompt embedding
           iou_token_out (torch.Tensor): Tokens of iou prediction from neck module
           mask_tokens_out (torch.Tensor): Tokens of mask prediction form neck module
-          mask_scale (int): Original SAM output 3 masks which is from local to global as default
-                            This Class use one of three mask tokens to transform it into class-ware
-                            semantic segmentation prediction
+          mask_scale (int): Original SAM outputs 1 (or) 3 masks - mask 0 (or) masks 1-3 based on arg 'multimask_output'.
+                            Each mask corresponds to its own mask_token. *** One mask can contain multiple objects ***.
+                            On the contrary, our SAM adapted model uses only one mask_token to deduce all mask.
+
+                            In the original SAM, I believe the mask 0 is not used for multimask_output since its
+                            corresponding mlp and mask_token are trained for a single mask output scenario - which
+                            produces a complete stable mask, unlike mask 1-3 which are meant to complement each other.
+                            Hence, in my view, mask 0 is the better & safer mask to use.
+
+                            This Class uses the mask_token corresponding to mask 0 to transform the model for a
+                            class-ware semantic segmentation prediction (set using mask_scale=0).
 
         Returns:
           torch.Tensor: batched predicted semantic masks
