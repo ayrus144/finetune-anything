@@ -30,12 +30,16 @@ def get_opt_pamams(model, lr_list, group_keys, wd_list):
     assert len(lr_list) == len(group_keys), "lr_list should has the same length as group_keys"
     assert len(lr_list) == len(wd_list), "lr_list should has the same length as wd_list"
     params_group = [[] for _ in range(len(lr_list))]
-    for name, value in model.named_parameters():
-        for index, g_keys in enumerate(group_keys):
-            for g_key in g_keys:
-                if g_key in name:
-                    params_group[index].append(value)
-    return [{'params': params_group[i], 'lr': lr_list[i], 'weight_decay': wd_list[i]} for i in range(len(lr_list))]
+    if len(lr_list) == 0:
+        return (param for name, param in model.named_parameters() if name.startswith('mask_adapter.decoder_head'))
+        # decoder_head: output_scaling, output_hyperparameter_mlps, iou_prediction_head
+    else:
+        for name, value in model.named_parameters():
+            for index, g_keys in enumerate(group_keys):
+                for g_key in g_keys:
+                    if g_key in name:
+                        params_group[index].append(value)
+        return [{'params': params_group[i], 'lr': lr_list[i], 'weight_decay': wd_list[i]} for i in range(len(lr_list))]
 
 
 class Timer:
