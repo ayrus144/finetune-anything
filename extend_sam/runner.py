@@ -43,8 +43,10 @@ class SemRunner(BaseRunner):
         best_valid_mIoU = -1
         model_path = "{cfg.model_folder}/{cfg.experiment_name}/model.pth".format(cfg=cfg)
         log_path = "{cfg.log_folder}/{cfg.experiment_name}/log_file.txt".format(cfg=cfg)
+        IoU_log_path = "{cfg.log_folder}/{cfg.experiment_name}/IoU_log_file.txt".format(cfg=cfg)
         check_folder(model_path)
         check_folder(log_path)
+        check_folder(IoU_log_path)
         writer = None
         if cfg.use_tensorboard is True:
             tensorboard_dir = "{cfg.tensorboard_folder}/{cfg.experiment_name}/tensorboard/".format(cfg=cfg)
@@ -74,14 +76,16 @@ class SemRunner(BaseRunner):
                           writer=writer, timer=self.train_timer)
             # eval
             if (iteration + 1) % cfg.eval_iter == 0:
-                mIoU, _ = self._eval()
+                mIoU, mIoU_foreground, IoU_dict, _, _ = self._eval()
                 if best_valid_mIoU == -1 or best_valid_mIoU < mIoU:
                     best_valid_mIoU = mIoU
                     save_model(self.model, model_path, parallel=self.the_number_of_gpu > 1)
                     print_and_save_log("saved model in {model_path}".format(model_path=model_path), path=log_path)
-                log_data = {'mIoU': mIoU, 'best_valid_mIoU': best_valid_mIoU}
+                log_data = {'mIoU': mIoU, 'best_valid_mIoU': best_valid_mIoU, 'mIoU_foreground' : mIoU_foreground}
                 write_log(iteration=iteration, log_path=log_path, log_data=log_data, status=self.exist_status[1],
                           writer=writer, timer=self.eval_timer)
+                write_log(iteration=iteration, log_path=IoU_log_path, log_data=IoU_dict,
+                          status=self.exist_status[1], writer=writer, timer=self.eval_timer, print_log=False)
         # final process
         save_model(self.model, model_path, is_final=True, parallel=self.the_number_of_gpu > 1)
         if writer is not None:
@@ -109,7 +113,7 @@ class SemRunner(BaseRunner):
 
                     eval_metric.add(pred_mask, gt_mask)
         self.model.train()
-        return eval_metric.get(clear=True)
+        return eval_metric.get(detail=True, clear=True)
 
     def _compute_loss(self, total_loss, loss_dict, mask_pred, labels, cfg):
         """

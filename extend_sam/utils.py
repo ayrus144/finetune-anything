@@ -89,8 +89,9 @@ class Average_Meter:
         self.data_dic = {key: [] for key in self.keys}
 
 
-def print_and_save_log(message, path):
-    print(message)
+def print_and_save_log(message, path, print_log=True):
+    if print_log:
+        print(message)
 
     with open(path, 'a+') as f:
         f.write(message + '\n')
@@ -188,7 +189,7 @@ def save_model(model, model_path, parallel=False, is_final=False):
         torch.save(model.state_dict(), model_path)
 
 
-def write_log(iteration, log_path, log_data, status, writer, timer):
+def write_log(iteration, log_path, log_data, status, writer, timer, print_log=True):
     log_data['iteration'] = iteration
     log_data['time'] = timer.end(clear=True)
     message = "iteration : {val}, ".format(val=log_data['iteration'])
@@ -197,7 +198,7 @@ def write_log(iteration, log_path, log_data, status, writer, timer):
             continue
         message += "{key} : {val}, ".format(key=key, val=value)
     message = message[:-2]  # + '\n'
-    print_and_save_log(message, log_path)
+    print_and_save_log(message, log_path, print_log=print_log)
     # visualize
     if writer is not None:
         for key, value in log_data.items():
