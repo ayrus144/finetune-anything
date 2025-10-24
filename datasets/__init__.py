@@ -1,7 +1,7 @@
 from .detection import BaseDetectionDataset
 from .instance_seg import BaseInstanceDataset
 from .semantic_seg import BaseSemanticDataset, VOCSemanticDataset, TorchVOCSegmentation
-from .transforms import get_transforms
+from .transforms import get_transforms, get_joint_transforms
 from torchvision.datasets import VOCSegmentation
 
 segment_datasets = {'base_ins': BaseInstanceDataset, 'base_sem': BaseSemanticDataset,
@@ -23,7 +23,11 @@ def get_dataset(cfg):
     if name in det_dataset:
         return det_dataset[name](**cfg.params, transform=transform)
     target_transform = get_transforms(cfg.target_transforms)
-    return segment_datasets[name](**cfg.params, transform=transform, target_transform=target_transform)
+    if 'joint_transforms' in cfg:
+        joint_transform = get_joint_transforms(cfg.joint_transforms)
+        return segment_datasets[name](**cfg.params, joint_transform=joint_transform)
+    else:
+        return segment_datasets[name](**cfg.params, transform=transform, target_transform=target_transform)
 
 
 class Iterator:

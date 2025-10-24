@@ -27,7 +27,7 @@ class BaseSemanticDataset(VisionDataset):
         │   │   │   ├── val
     """
 
-    def __init__(self, dataset_dir, transform, target_transform,
+    def __init__(self, dataset_dir, transform=None, target_transform=None, joint_transform=None,
                  image_set='train',
                  img_suffix='.jpg',
                  ann_suffix='.png',
@@ -44,6 +44,11 @@ class BaseSemanticDataset(VisionDataset):
         super(BaseSemanticDataset, self).__init__(root=dataset_dir, transform=transform,
                                                   target_transform=target_transform)
 
+        if joint_transform is not None:
+            self.transforms = joint_transform
+        else:
+            assert transform is not None, 'arg transform is required'
+            assert target_transform is not None, 'arg target_transform is required'
         metainfo = OmegaConf.load(os.path.join(dataset_dir, 'metainfo.yaml'))
         self.class_names = metainfo['class_names']
         self.img_path = os.path.join(dataset_dir, data_prefix['img_path'], image_set)
