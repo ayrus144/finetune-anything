@@ -31,8 +31,15 @@ def get_opt_pamams(model, lr_list, group_keys, wd_list):
     assert len(lr_list) == len(wd_list), "lr_list should has the same length as wd_list"
     params_group = [[] for _ in range(len(lr_list))]
     if len(lr_list) == 0:
-        return (param for name, param in model.named_parameters() if name.startswith('mask_adapter.decoder_head'))
-        # decoder_head: output_scaling, output_hyperparameter_mlps, iou_prediction_head
+        return (
+            param
+            for name, param in model.named_parameters()
+            if name.startswith(('mask_adapter.decoder_', 'ori_sam.mask_decoder.transformer.'))
+        )
+        # Layers that are trained -
+        # mask_adapter.decoder_neck: iou_token, mask_tokens
+        # mask_adapter.decoder_head: output_scaling, output_hyperparameter_mlps, iou_prediction_head
+        # ori_sam.mask_decoder.transformer
     else:
         for name, value in model.named_parameters():
             for index, g_keys in enumerate(group_keys):
