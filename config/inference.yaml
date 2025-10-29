@@ -1,0 +1,42 @@
+inference:
+  # Model - details need to be same as during training
+  model:
+    sam_name: 'sem_sam'
+    model_path: 'path to trained class-aware semantic model based on SAM model'
+    params:
+      # Fix parameters for the parts of SAM
+      fix_img_en: True
+      fix_prompt_en: True
+      fix_mask_de: False
+      ckpt_path: 'path to downloaded original SAM model of type model_type'
+      class_num: 12        # num_labels+1, interpret as [0, 1, 2, num_labels], 0 for background by default
+      model_type: 'vit_h'  # type should be in [vit_h, vit_b, vit_l, default]
+
+  # Dataset
+  dataset:
+    # input
+    input_dir: 'path to dataset'
+    # needs input_dir/img/infer folder containing images for inference
+    # needs input_dir/metainfo.yaml (same one used for training)
+    transforms:
+      resize:
+        params:
+          size: [ 1024, 1024 ]
+      to_tensor:
+        params: ~
+    # output
+    output_dir: 'path to output'
+    label2color:
+      # all class_names mentioned in metainfo.yaml should have corresponding colors in hexadecimal
+      road: "#7A7A7A"
+      bareground_rock: "#C0C0C0"
+      ground_vegetation: "#32CD32"
+      rejuvenation: "#9ACD32"
+      tree_trunk: "#CD5C5C"
+      trees_background: "#006400"
+      snow: "#E0FFFF"
+      pole: "#FFA500"
+      blur_obs: "#4682B4"
+      sky: "#87CEFA"
+      dead_veg_debris: "#A0522D"
+
