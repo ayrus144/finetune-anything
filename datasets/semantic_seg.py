@@ -47,8 +47,10 @@ class BaseSemanticDataset(VisionDataset):
         if joint_transform is not None:
             self.transforms = joint_transform
         else:
-            assert transform is not None, 'arg transform is required'
-            assert target_transform is not None, 'arg target_transform is required'
+            assert transform is not None, '(train/val).dataset.transforms is required config'
+            # For input - at least resize (to [1024, 1024]) & to_tensor transforms should be applied for SAM compliant input
+            assert target_transform is not None, '(train/val).dataset.target_transforms is required config'
+            # For target - at least resize (to [1024, 1024]) transform should be applied for SAM compliant input
         metainfo = OmegaConf.load(os.path.join(dataset_dir, 'metainfo.yaml'))
         self.class_names = metainfo['class_names']
         self.img_path = os.path.join(dataset_dir, data_prefix['img_path'], image_set)

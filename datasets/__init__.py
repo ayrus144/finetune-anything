@@ -19,11 +19,11 @@ def get_dataset(cfg):
     #   param1 = cfg.xxx
     #   param2 = cfg.xxx
     # return name_dict[name](path, model, param1, param2, ...)
-    transform = get_transforms(cfg.transforms)
+    transform = get_transforms(cfg.transforms) if cfg.transforms is not None else None
     if name in det_dataset:
         return det_dataset[name](**cfg.params, transform=transform)
-    target_transform = get_transforms(cfg.target_transforms)
-    if 'joint_transforms' in cfg:
+    target_transform = get_transforms(cfg.target_transforms) if cfg.target_transforms is not None else None
+    if cfg.joint_transforms is not None:
         joint_transform = get_joint_transforms(cfg.joint_transforms)
         return segment_datasets[name](**cfg.params, joint_transform=joint_transform)
     else:
