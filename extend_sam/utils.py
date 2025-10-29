@@ -224,7 +224,7 @@ def check_folder(file_path, is_folder=False):
     :return: no return, this function will check and judge whether need to make dirs.
     '''
     if is_folder:
-        if not osp.exists(is_folder):
+        if not osp.exists(file_path):
             os.makedirs(file_path)
 
     else:
