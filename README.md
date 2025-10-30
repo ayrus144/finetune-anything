@@ -103,6 +103,11 @@ python inference.py
 
 If you need to use loss, dataset, or other functions that are not supported by FA, please submit an issue, and I will help you to implement them. At the same time, developers are also welcome to develop new loss, dataset or other new functions for FA, please submit your PR (pull requests).
 
+An Idea for future:
+  - The current implementation of loss_function are probably based on Per-pixel classification formulation.
+  - The original [SAM](https://arxiv.org/pdf/2304.02643) implementation adapted [Mask classification formulation](https://proceedings.neurips.cc/paper_files/paper/2021/file/950a4152c2b4aa3ad78bdd6b366cc179-Paper.pdf) for single mask output.
+  - In our case, the outputs mask_pred, iou_pred (assuming as a proxy for class mask confidence) can be used to adapt Mask classification formulation for multi mask output.
+
 ## Related Resources
 
 - [Documents](https://github.com/ayrus144/finetune-anything/blob/main/how_to_use_finetune_anything.md)
