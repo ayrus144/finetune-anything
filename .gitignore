@@ -1,0 +1,6 @@
+.idea/*
+
+# Run files
+_final.pth
+experiment/log/*
+experiment/model/*
