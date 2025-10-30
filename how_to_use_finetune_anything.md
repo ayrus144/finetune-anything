@@ -45,7 +45,7 @@ params:
                          # related to different original SAM model. the type should be corresponded to the ckpt_path
 ```
 ### Customized Model
-If you need to redesign the structure of a certain module of SAM, you need to write code according to the following three steps. Take [SemanticSAM](https://github.com/ziqi-jin/finetune-anything/blob/350c1fbf7f122a8525e7ffdecc40f259b262983f/extend_sam/extend_sam.py#L43) as an example.
+If you need to redesign the structure of a certain module of SAM, you need to write code according to the following three steps. Take [SemanticSAM](https://github.com/ayrus144/finetune-anything/blob/main/extend_sam/extend_sam.py#L43) as an example.
 - step1
 
 First, inherit the corresponding adapter base class in `extend_sam\xxx_(encoder or decoder)_adapter.py`, and then implement the `__init__` and `forward` function corresponding to the adapter.
@@ -66,7 +66,7 @@ class SemMaskDecoderAdapter(BaseMaskDecoderAdapter):
 ```
 - step2
 
-First inherit the BaseExtendSAM base class in [extend_sam.py](https://github.com/ziqi-jin/finetune-anything/blob/350c1fbf7f122a8525e7ffdecc40f259b262983f/extend_sam/extend_sam.py#L43), and make necessary modifications to `__init__` function.
+First inherit the BaseExtendSAM base class in [extend_sam.py](https://github.com/ayrus144/finetune-anything/blob/main/extend_sam/extend_sam.py#L43), and make necessary modifications to `__init__` function.
 ```python
 class SemanticSam(BaseExtendSam):
 
@@ -76,16 +76,16 @@ class SemanticSam(BaseExtendSam):
 ```
 - step3
 
-Add new Extend-SAM class to [AVAI_MODEL](https://github.com/ziqi-jin/finetune-anything/blob/350c1fbf7f122a8525e7ffdecc40f259b262983f/extend_sam/__init__.py#L10) dict and give it a key.
+Add new Extend-SAM class to [AVAI_MODEL](https://github.com/ayrus144/finetune-anything/blob/main/extend_sam/__init__.py#L10) dict and give it a key.
 then you can train this new model by modify the `sam_name` in config file.
 
 ## Datasets
 
 FA comes with datasets for multiple tasks, and also supports custom datasets, and sets the training and test datasets separately. Takes `torch_voc_sem` as an example, the configuration file of the dataset part is as follows,
-The dataset part includes `name`, `params`, `transforms` and `target_transforms`,
+The dataset part includes `name`, `params`, `transforms`, `target_transforms` and `joint_transforms`
 The `params` which is a `dict` include the key and value your want to set about the init function's parameters of corresponding dataset. make sure the dataset has parameters with the same names as the key.
-`transforms` and `target_transforms` respectively correspond to the input image and Ground Truth for transform processing.
-`transforms/target_transforms` support to set the implemented transform function and the corresponding `params`, `params` are still in the form of a `dict`, and transform will process the datasets according to the input order of the configuration file.
+`transforms` and `target_transforms` respectively correspond to the input image and Ground Truth transform processing independently. Alternatively, `joint_transforms` is applied on both input and ground-truth.
+`transforms/target_transforms` or `joint_transforms`, one of them needs to be set (if all three are present `joint_transforms` takes precedence) to implement transform function using the corresponding `params`, also in the form of a `dict`. The transforms will be applied on the datasets according to the input order in the configuration file.
 ```yaml
   # Dataset
   dataset:
@@ -104,6 +104,15 @@ The `params` which is a `dict` include the key and value your want to set about 
       resize:
         params:
           size: [1024, 1024]
+    joint_transforms:
+      resize:
+        params:
+          size: [1024, 1024]
+      random_hflip:
+        params:
+          p: 0.5
+      to_tensor:
+        params: ~ # no parameters, set to '~'
 ```
 
 ### Customized Dataset
@@ -118,7 +127,7 @@ If you want to customize the transform, you can follow the following three steps
     
     - Torch-unsupported transform
     
-    Create it in [datasets/transforms.py](https://github.com/ziqi-jin/finetune-anything/blob/main/datasets/transforms.py),  implement the `__init__` and `forward` function.
+    Create it in [datasets/transforms.py](https://github.com/ayrus144/finetune-anything/blob/main/datasets/transforms.py),  implement the `__init__` and `forward` function.
     
 ```python
 import torch.nn as nn
@@ -132,7 +141,7 @@ class CustomTransform(nn.Module):
     
 - step2
 
-    Import torch-supported transform you want or torch-unsupported transform your identify in [datasets/transforms.py](https://github.com/ziqi-jin/finetune-anything/blob/main/datasets/transforms.py).
+    Import torch-supported transform you want or torch-unsupported transform your identify in [datasets/transforms.py](https://github.com/ayrus144/finetune-anything/blob/main/datasets/transforms.py).
     Then add this transform into the AVIAL_TRANSFORM  dict, give this transform a key like `resize`, and the value is the transform class.
     
 ```python
@@ -186,7 +195,7 @@ If you want to customize the loss function, you can follow the following three s
     
     - Torch-unsupported Loss
     
-    Create it in [loss.py](https://github.com/ziqi-jin/finetune-anything/blob/main/losses/losses.py),  implement the `__init__` and `forward` function.
+    Create it in [loss.py](https://github.com/ayrus144/finetune-anything/blob/main/losses/losses.py),  implement the `__init__` and `forward` function.
     
 ```python
 import torch.nn as nn
@@ -200,7 +209,7 @@ def forward(self, x, y, xxx):
     
 - step2
 
-    Import torch-supported loss you want or torch-unsupported loss your identify in [losses/\_\_init\_\_,py](https://github.com/ziqi-jin/finetune-anything/blob/26b9ebd1b035a2f0ec8ce4e358eac79de7e263a2/losses/__init__.py#L2).
+    Import torch-supported loss you want or torch-unsupported loss your identify in [losses/\_\_init\_\_,py](https://github.com/ayrus144/finetune-anything/blob/main/losses/__init__.py#L2).
     Then add this loss into the AVAI_LOSS dict, give this loss a key like `ce`, and the value is the loss function.
     
 ```python
