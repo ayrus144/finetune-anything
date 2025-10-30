@@ -1,3 +1,6 @@
+# If params are not needed, set them to ~(None).
+# DON'T REMOVE UNUSED PARAMS - can lead to errors when reading config file.
+
 train:
   experiment_name: 'semantic_sam'
 
@@ -5,62 +8,74 @@ train:
   model:
     sam_name: 'sem_sam'
     params:
-      # Fix the a part of parameters in SAM
+      # Fix parameters for the parts of SAM
       fix_img_en: True
       fix_prompt_en: True
       fix_mask_de: False
-      ckpt_path: 'sam_ckpt/sam_vit_b_01ec64.pth'
-      class_num: 21 # 20 + 1
-      model_type: 'vit_b'    # type should be in [vit_h, vit_b, vit_l, default]
+      ckpt_path: "C:/LWF/sam_annotator/assets/sam_vit_h_4b8939_finetuned.pth"
+      class_num: 12        # num_labels+1, interpret as [0, 1, 2, num_labels], 0 for background by default
+      model_type: 'vit_h'  # type should be in [vit_h, vit_b, vit_l, default]
 
   # Dataset
   dataset:
-    name: 'torch_voc_sem'
+    name: 'base_sem'
     params:
-      root: '/data/jinziqi/DATASETS/'
-      year: '2012'
+      dataset_dir: 'path to dataset'
       image_set: 'train'
-    transforms:
+      img_suffix: '.png'
+      ann_suffix: '.png'
+    transforms: ~
+    target_transforms: ~
+    joint_transforms:
       resize:
         params:
           size: [1024, 1024]
+      random_hflip:
+        params:
+          p: 0.5
       to_tensor:
         params: ~
-    target_transforms:
-      resize:
-        params:
-          size: [1024, 1024]
 
   # Losses
   losses:
-    ce:
-      weight: 0.5
-      params:  # ~ means None type, the initial params of loss could be identified here
-        ignore_index: 255
+    dice_loss:
+      weight: 1.0
+      params:
+        eps: 1e-6
+        ignore_classes: 0       # background class is usually neglected for dice loss
+      label_one_hot: False
+    focal_loss:
+      weight: 20.0
+      params:
+        alpha: 0.8
+        gamma: 2.0
+        reduction: 'mean'
       label_one_hot: False
 
   # Optimizer
   opt_params:
-    lr_default:  1e-3
-    wd_default: 1e-4
+    # default params trained are from mask_adapter.decoder_neck, mask_adapter.decoder_head
+    # and ori_sam.mask_decoder.transformer layers
+    lr_default: 8e-4
+    wd_default: 0.1
     momentum: 0.9
-    lr_list:  [ 1e-2, ]
-    group_keys: [ [ 'mask_adapter.decoder_head.output_hypernetworks_mlps', ], ]
-    wd_list:  [ 0.0, ]
-  opt_name: 'sgd' # 'sgd'
+    lr_list:  []          # [ 1e-2, ]
+    group_keys: []        # [ [ 'mask_adapter.decoder_head.output_hypernetworks_mlps', ], ]
+    wd_list:  []          # [ 0.0, ]
+  opt_name: 'adamw' # 'sgd'
   scheduler_name: 'cosine'
 
   # Runner
-  max_iter: 100000
-  log_iter: 20
-  eval_iter: 200
+  max_iter: 1000
+  log_iter: 10
+  eval_iter: 50
   runner_name: 'sem_runner'
   # Dataloader
-  bs: 8 # 8
+  bs: 8
   num_workers: 2
   drop_last: True
   # Logger
-  use_tensorboard: True
+  use_tensorboard: False
   tensorboard_folder: './experiment/tensorboard'
   log_folder: './experiment/log'
   model_folder: './experiment/model'
@@ -68,21 +83,20 @@ train:
 val:
   # Dataset
   dataset:
-    name: 'torch_voc_sem'
+    name: 'base_sem'
     params:
-      root: '/data/jinziqi/DATASETS/'
-      year: '2012'
-      image_set: 'train'
-    transforms:
+      dataset_dir: 'path to dataset'
+      image_set: 'val'
+      img_suffix: '.png'
+      ann_suffix: '.png'
+    transforms: ~
+    target_transforms: ~
+    joint_transforms:
       resize:
         params:
           size: [1024, 1024]
       to_tensor:
         params: ~
-    target_transforms:
-      resize:
-        params:
-          size: [1024, 1024]
 
   bs: 8
   num_workers: 2
